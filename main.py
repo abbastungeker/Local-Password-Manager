@@ -1,8 +1,11 @@
 # ---------------------------- Imports ------------------------------- #
+import tkinter
+from textwrap import indent
 from tkinter import *
 from tkinter import messagebox
 import random
-
+import json
+import _json
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 def Password_Generate():
@@ -44,18 +47,84 @@ def Password_Generate():
 def Warning_message():
     messagebox.showwarning(title="Entry Error", message="Please enter all field-boxes to successfully store details")
 
+
 def Data_Insertion():
     website = website_entry.get()
     email_username = email_username_entry.get()
     password = password_entry.get()
 
+    new_data = {
+        website: {
+            "email": email_username,
+            "password": password
+        }
+    }
+
+
     if website != "" and email_username != "" and password != "":
-        with open("Data.txt", mode="a") as Data:
-            Data.write(f"\n{website} | {email_username} | {password}")
+        # Opens Data.json file as data_file variable
+        try:
+            with open("Data.json", mode="r") as data_file:
+                # Reads old Json Data
+                Data = json.load(data_file)
+                #Updating old data with new data
+                Data.update(new_data)
+
+
+
+        except FileNotFoundError:
+            with open(file= "Data.json", mode="w") as data_file:
+                json.dump(new_data, data_file, indent=4)
+        else:
+            with open(file="Data.json", mode="w") as data_file:
+                json.dump(Data, data_file, indent=4)
+
+
+
         messagebox.showinfo(title="Successful Storage", message=f"Your details for {website} have been successfully saved.")
 
     else:
         Warning_message()
+def Clear_Text_Box():
+    password_entry.delete(0,tkinter.END)
+    # email_username_entry.delete(0,tkinter.END)
+    website_entry.delete(0,tkinter.END)
+
+def Confirmation_box():
+    confirmation_question = messagebox.askyesno(title="Confirmation Message",message= "Are you sure you wish to continue?" )
+    if confirmation_question:
+        Data_Insertion()
+        Clear_Text_Box()
+
+def find_password():
+    website = website_entry.get()
+
+
+    try:
+        with open(file="Data.json", mode="r") as data_file:
+            Data = json.load(data_file)
+
+            if website in Data:
+                messagebox.showinfo(title="Account details",
+                                    message= f"You account details for your {website} account is: \n"
+                                             f"Account name: {website}\n"
+                                             f"Email: {Data[website]['email']}\n"
+                                             f"Password: {Data[website]['password']}" )
+            else:
+                messagebox.showinfo(title= "Unable to find Account",
+                                    message=f"Could not find {website} details, make sure a record of {website} account exists within database.")
+    except FileNotFoundError:
+        messagebox.showwarning(title="File Error",
+                            message="There is no current database established. Enter account details and save them first.")
+
+
+
+def find_password_confirmation():
+    website = website_entry.get()
+    find_password_confirmation = messagebox.askyesno(title="Find Password",message= f"Do you wish to find the password for your {website} account")
+    if find_password_confirmation:
+        find_password()
+
 
 # ---------------------------- UI SETUP ------------------------------- #
 window = Tk()
@@ -94,13 +163,13 @@ website_label.grid(
     row=1
 )
 #Website Entry box
-website_entry = Entry(width=50)
+website_entry = Entry(width=30)
 website_entry.focus()
 website_entry.grid(
     column=1,
     row= 1,
-    columnspan=3,
-    padx= (10,0)
+    columnspan=2,
+    padx= (5,0)
 )
 
 #EMAIL/USERNAME SECTION
@@ -136,6 +205,13 @@ password_entry.grid(
     padx= (5,0)
 )
 
+#Search Button
+search_button = Button(text="Search", width=15, height=1, bg="#E3E4E8", highlightthickness=0, command= find_password_confirmation)
+search_button.grid(
+    column= 3,
+    row=1
+)
+
 #Generate Password Button
 password_button = Button(text="Generate Password", width=15, height=1, bg="#E3E4E8", highlightthickness=0, command= Password_Generate)
 password_button.grid(
@@ -145,13 +221,12 @@ password_button.grid(
 
 #ADD SECTION
 #Add Button
-add_button = Button(text="Add", width= 43, height=1, bg="#E3E4E8", highlightthickness=0, command= Data_Insertion)
+add_button = Button(text="Add", width= 43, height=1, bg="#E3E4E8", highlightthickness=0, command= Confirmation_box)
 add_button.grid(
     row= 4,
     column=1,
     columnspan= 3,
     padx=(10,0)
-
 
 )
 
